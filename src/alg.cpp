@@ -1,52 +1,50 @@
 // Copyright 2022 NNTU-CS
-#include  <iostream>
-#include  <fstream>
-#include  <locale>
-#include  <cstdlib>
-#include  "tree.h"
-#include <vector>
+#include "tree.h"
+
 #include <algorithm>
+#include <cstdint>
+#include <vector>
 
 namespace {
 
-long long fact(int n) {
-  long long res = 1;
-  for (int i = 2; i <= n; ++i) res *= i;
-  return res;
+int64_t fact(int n) {
+  int64_t f = 1;
+  for (int i = 2; i <= n; ++i) f *= i;
+  return f;
 }
 
-void walk(PMTree::Node* node, std::vector<char>& curr,
-          std::vector<std::vector<char>>& accum) {
+void traverse(PMTree::Node* node, std::vector<char>& cur,
+             std::vector<std::vector<char>>& out) {
   if (node->down.empty()) {
-    accum.push_back(curr);
+    out.push_back(cur);
     return;
   }
-  for (PMTree::Node* nxt : node->down) {
-    curr.push_back(nxt->val);
-    walk(nxt, curr, accum);
-    curr.pop_back();
+  for (PMTree::Node* child : node->down) {
+    cur.push_back(child->val);
+    traverse(child, cur, out);
+    cur.pop_back();
   }
 }
 
-void goDown(PMTree::Node* node, int order, std::vector<char>& out) {
+void navigate(PMTree::Node* node, int num, std::vector<char>& res) {
   if (node->down.empty()) return;
-  int branchCount = static_cast<int>(node->down.size());
-  long long perBranch = fact(branchCount - 1);
-  int chosenIdx = static_cast<int>((order - 1) / perBranch);
-  int nextOrder = static_cast<int>((order - 1) % perBranch) + 1;
-  if (chosenIdx < 0 || chosenIdx >= branchCount) return;
-  PMTree::Node* selected = node->down[chosenIdx];
-  out.push_back(selected->val);
-  goDown(selected, nextOrder, out);
+  int k = static_cast<int>(node->down.size());
+  int64_t sub = fact(k - 1);
+  int idx = static_cast<int>((num - 1) / sub);
+  int rem = static_cast<int>((num - 1) % sub) + 1;
+  if (idx < 0 || idx >= k) return;
+  PMTree::Node* chosen = node->down[idx];
+  res.push_back(chosen->val);
+  navigate(chosen, rem, res);
 }
 
 }  // namespace
 
 std::vector<std::vector<char>> getAllPerms(PMTree& tree) {
-  std::vector<std::vector<char>> result;
-  std::vector<char> current;
-  if (tree.top) walk(tree.top, current, result);
-  return result;
+  std::vector<std::vector<char>> out;
+  std::vector<char> cur;
+  if (tree.top) traverse(tree.top, cur, out);
+  return out;
 }
 
 std::vector<char> getPerm1(PMTree& tree, int num) {
@@ -56,11 +54,11 @@ std::vector<char> getPerm1(PMTree& tree, int num) {
 }
 
 std::vector<char> getPerm2(PMTree& tree, int num) {
-  std::vector<char> result;
+  std::vector<char> res;
   if (!tree.top || tree.top->down.empty()) return {};
-  int totalBranches = static_cast<int>(tree.top->down.size());
-  long long totalPerms = fact(totalBranches);
-  if (num < 1 || num > totalPerms) return {};
-  goDown(tree.top, num, result);
-  return result;
+  int k = static_cast<int>(tree.top->down.size());
+  int64_t total = fact(k);
+  if (num < 1 || num > total) return {};
+  navigate(tree.top, num, res);
+  return res;
 }
